@@ -102,8 +102,6 @@ describe('Level 2', () => {
 
     it('Solve input', () => {
       const input = readInput();
-      console.log(input);
-
       const result = solveLevel2part2(input);
       expect(result).toBe(1975421260);
     });
