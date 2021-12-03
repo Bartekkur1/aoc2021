@@ -1,7 +1,10 @@
 import { readAs } from "../util/readAs";
-import { omit } from 'lodash';
 
-type Direction = "forward" | "down" | "up";
+enum Direction {
+  FORWARD = "forward",
+  DOWN = "down",
+  UP = "up"
+};
 
 interface Command {
   direction: Direction;
@@ -22,20 +25,20 @@ const createAimPosition = (): AimPosition => ({ ...createPosition(), aim: 0 });
 
 const executeCommand = (command: Command, position: Position) => {
   const { direction, steps } = command;
-  if (direction === "forward") position.horizontal += steps;
-  if (direction === "down") position.depth -= steps;
-  if (direction === "up") position.depth += steps;
+  if (direction === Direction.FORWARD) position.horizontal += steps;
+  if (direction === Direction.DOWN) position.depth -= steps;
+  if (direction === Direction.UP) position.depth += steps;
   return position;
 };
 
 const executeCommand2 = (command: Command, position: AimPosition) => {
   const { direction, steps } = command;
-  if (direction === "forward") {
+  if (direction === Direction.FORWARD) {
     position.horizontal += steps;
     position.depth += (position.aim * steps);
   }
-  if (direction === "down") position.aim += steps;
-  if (direction === "up") position.aim -= steps;
+  if (direction === Direction.DOWN) position.aim += steps;
+  if (direction === Direction.UP) position.aim -= steps;
   return position;
 };
 
@@ -61,12 +64,12 @@ describe('Level 2', () => {
 
     it('Solve example input', () => {
       const input: Command[] = [
-        { direction: "forward", steps: 5 },
-        { direction: "down", steps: 5 },
-        { direction: "forward", steps: 8 },
-        { direction: "up", steps: 3 },
-        { direction: "down", steps: 8 },
-        { direction: "forward", steps: 2 }
+        { direction: Direction.FORWARD, steps: 5 },
+        { direction: Direction.DOWN, steps: 5 },
+        { direction: Direction.FORWARD, steps: 8 },
+        { direction: Direction.UP, steps: 3 },
+        { direction: Direction.DOWN, steps: 8 },
+        { direction: Direction.FORWARD, steps: 2 }
       ];
 
       const result = solveLevel2part1(input);
@@ -85,12 +88,12 @@ describe('Level 2', () => {
 
     it('Solve example data', () => {
       const input: Command[] = [
-        { direction: "forward", steps: 5 },
-        { direction: "down", steps: 5 },
-        { direction: "forward", steps: 8 },
-        { direction: "up", steps: 3 },
-        { direction: "down", steps: 8 },
-        { direction: "forward", steps: 2 }
+        { direction: Direction.FORWARD, steps: 5 },
+        { direction: Direction.DOWN, steps: 5 },
+        { direction: Direction.FORWARD, steps: 8 },
+        { direction: Direction.UP, steps: 3 },
+        { direction: Direction.DOWN, steps: 8 },
+        { direction: Direction.FORWARD, steps: 2 }
       ];
 
       const result = solveLevel2part2(input);
@@ -99,6 +102,8 @@ describe('Level 2', () => {
 
     it('Solve input', () => {
       const input = readInput();
+      console.log(input);
+
       const result = solveLevel2part2(input);
       expect(result).toBe(1975421260);
     });
