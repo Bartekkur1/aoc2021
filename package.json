@@ -10,6 +10,7 @@
     "level3": "jest ./src/level3",
     "level4": "jest ./src/level4",
     "level5": "jest ./src/level5",
+    "level6": "jest ./src/level6",
     "ts-init": "ts-jest config:init",
     "tsc-init": "tsc --init"
   },
