@@ -30,6 +30,64 @@ const solveLevel6Part1 = (days: number, initialState: number[]) => {
   return fishGroup.length;
 };
 
+type FishCache = { [key: number]: number };
+
+interface Fish {
+  value: number;
+  day: number;
+}
+
+const cache: FishCache = {};
+
+const countFishFishes = (fish: Fish, days: number) => {
+  let val = fish.value;
+  let count = 0;
+  for (let i = fish.day; i <= days; i++) {
+    if (val <= -1) {
+      val = 6;
+      count++;
+    }
+    val -= 1;
+  }
+  return count;
+};
+
+let result = 0;
+
+const spawnFishFishes = (fish: Fish, days: number) => {
+  const fishesCount = countFishFishes(fish, days);
+
+  if (fishesCount === 0) {
+    return;
+  }
+
+  const spawnedFishes: Fish[] = [];
+  for (let i = 0; i < fishesCount; i++) {
+    const day = (i * 6) + fish.value + i + 1 + fish.day;
+    spawnedFishes.push({ day, value: 8 });
+  }
+
+  result += spawnedFishes.length;
+  for (let fish of spawnedFishes) {
+    spawnFishFishes(fish, days);
+  }
+};
+
+const solveLevel6Part2 = (fishes: Fish[], days: number) => {
+  for (let fish of fishes) {
+    if (cache[fish.value]) {
+      result += cache[fish.value];
+    } else {
+      const beforeCount = result;
+      result++;
+      spawnFishFishes(fish, days);
+      const afterCount = result;
+      const increasePopulation = afterCount - beforeCount;
+      cache[fish.value] = increasePopulation;
+    }
+  }
+};
+
 describe('Level 6', () => {
 
   describe('Part 1', () => {
@@ -50,6 +108,22 @@ describe('Level 6', () => {
     });
   });
 
+  describe('Part 2', () => {
+    it('Solve input', () => {
+      const input = readAs<number[]>({
+        parser: (input) => {
+          return input[0].split(',').map(v => parseInt(v));
+        },
+        path: './src/level6/input'
+      });
+      let fishes: Fish[] = input.map(fv => ({
+        day: 0,
+        value: fv
+      }));
+      // karasie jedzom gówno
+      expect(solveLevel6Part2(fishes, 256)).toBe(1_631_629_590_423);
+    });
+  });
 
 
 });
