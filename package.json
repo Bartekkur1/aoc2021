@@ -13,6 +13,7 @@
     "level6": "jest ./src/level6",
     "level7": "ts-node ./src/level7/level7.ts",
     "level8": "ts-node ./src/level8/level8.ts",
+    "level9": "ts-node ./src/level9/level9.ts",
     "ts-init": "ts-jest config:init",
     "tsc-init": "tsc --init"
   },
