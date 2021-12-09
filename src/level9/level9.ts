@@ -6,6 +6,13 @@ interface Position {
 };
 
 interface PointAdjacent {
+  top: RiskPoint;
+  bottom: RiskPoint;
+  left: RiskPoint;
+  right: RiskPoint;
+}
+
+interface Adjacent {
   top: number;
   bottom: number;
   left: number;
@@ -14,50 +21,60 @@ interface PointAdjacent {
 
 interface RiskPoint {
   position: Position;
-  pointAdjacent: PointAdjacent;
+  pointAdjacent?: PointAdjacent;
   value: number;
+  group?: number;
 };
 
-const getPoint = (position: Position, map: Array<number[]>): number => {
-  if (map[position.y] !== undefined && map[position.y][position.x] !== undefined) {
-    return map[position.y][position.x];
-  } else {
-    return 10;
-  }
+const getPoint = (position: Position, map: RiskPoint[]): RiskPoint => {
+  return map.find(p => p.position.x === position.x && p.position.y === position.y) || {
+    position, value: 10, group: 0
+  };
 };
 
-const findPointAdjacent = (position: Position, map: Array<number[]>): PointAdjacent => {
+const getNeighborGroups = (position: Position, map: RiskPoint[]): Adjacent => {
   const { x, y } = position;
   const topPos = y + 1;
   const bottomPos = y - 1;
   const leftPos = x - 1;
   const rightPos = x + 1;
 
-  const top = getPoint({ x, y: bottomPos }, map);
-  const bottom = getPoint({ x, y: topPos }, map);
-  const right = getPoint({ x: rightPos, y }, map);
-  const left = getPoint({ x: leftPos, y }, map);
-
   return {
-    top,
-    bottom,
-    right,
-    left
+    top: getPoint({ x, y: bottomPos }, map).group || 0,
+    bottom: getPoint({ x, y: topPos }, map).group || 0,
+    right: getPoint({ x: rightPos, y }, map).group || 0,
+    left: getPoint({ x: leftPos, y }, map).group || 0
+  };
+};
+
+const assignPointAdjacent = (point: RiskPoint, map: RiskPoint[]): void => {
+  const { x, y } = point.position;
+  const topPos = y + 1;
+  const bottomPos = y - 1;
+  const leftPos = x - 1;
+  const rightPos = x + 1;
+
+  point.pointAdjacent = {
+    top: getPoint({ x, y: bottomPos }, map),
+    bottom: getPoint({ x, y: topPos }, map),
+    right: getPoint({ x: rightPos, y }, map),
+    left: getPoint({ x: leftPos, y }, map)
   };
 };
 
 const isPointLowRisk = (point: RiskPoint): boolean => {
   const { value, pointAdjacent } = point;
+  if (!pointAdjacent) return false;
   const { bottom, top, left, right } = pointAdjacent;
-  return value < bottom && value < top && value < left && value < right;
+  return value < bottom.value && value < top.value && value < left.value && value < right.value;
 };
 
-const findLowRisk = (points: RiskPoint[]): RiskPoint[] => {
+const findLowRiskPoints = (points: RiskPoint[]): RiskPoint[] => {
   return points.filter(p => isPointLowRisk(p));
 };
 
-const findLowRiskPoints = (path: string): RiskPoint[] => {
-  const points = readAs<RiskPoint[]>({
+const readInput = (path: string) => {
+  return readAs<RiskPoint[]>({
     parser: (input) => {
       const rawPoints = input.filter(i => i != '').map(i => i.split('')).map(row => row.map(col => parseInt(col)));
       const size = rawPoints[0].length;
@@ -68,7 +85,7 @@ const findLowRiskPoints = (path: string): RiskPoint[] => {
           result.push({
             position: { x, y },
             value: rawPoints[y][x],
-            pointAdjacent: findPointAdjacent({ y, x }, rawPoints)
+            group: 0
           });
         }
       }
@@ -78,123 +95,63 @@ const findLowRiskPoints = (path: string): RiskPoint[] => {
     path,
     splitter: /\n|\r/g
   });
+}
 
-  return findLowRisk(points);
-};
-
-const filterBasins = (points: RiskPoint[]): RiskPoint[] => {
-  return points.filter(point => {
-    const { value, pointAdjacent } = point;
-    const { bottom, top, left, right } = pointAdjacent;
-    return value != 9 && (value < top || value < bottom || value < left || value < right);
-  });
-};
-
-let rawPoints: Array<number[]> = [];
-
-const findBasins = (path: string): RiskPoint[] => {
-  const points = readAs<RiskPoint[]>({
-    parser: (input) => {
-      rawPoints = input.filter(i => i != '').map(i => i.split('')).map(row => row.map(col => parseInt(col)));
-      const size = rawPoints[0].length;
-
-      const result: RiskPoint[] = [];
-      for (let y = 0; y <= rawPoints.length - 1; y++) {
-        for (let x = 0; x <= size - 1; x++) {
-          result.push({
-            position: { x, y },
-            value: rawPoints[y][x],
-            pointAdjacent: findPointAdjacent({ y, x }, rawPoints)
-          });
-        }
-      }
-
-      return result;
-    },
-    path,
-    splitter: /\n|\r/g
-  });
-
-  return filterBasins(points);
-};
-
-// const basins = findBasins("./src/level9/exampleinput");
-const basins = findBasins("./src/level9/input");
-// console.log(lowRiskPointsExample);
-
-// console.log(lowRiskPointsExample.map(p => `${p.position.x}, ${p.position.y}, value: ${p.value}`));
-// console.log(lowRiskPointsExample.length);
-
-const maxX = Math.max(...basins.map(b => b.position.x)) + 1;
-const maxY = Math.max(...basins.map(b => b.position.y)) + 1;
-
-// const markMap = Array.from(Array(maxY), () => new Array(maxX).fill(false));
-const groupMap = Array.from(Array(maxY), () => new Array(maxX).fill(0));
-
-
-const getNeighborGroup = (position: Position) => {
-  if (groupMap[position.y] !== undefined && groupMap[position.y][position.x] !== undefined) {
-    return groupMap[position.y][position.x];
-  } else {
-    return undefined;
+const assignAdjacentPoints = (points: RiskPoint[]) => {
+  for (let point of points) {
+    assignPointAdjacent(point, points);
   }
 };
 
+// const input = readInput("./src/level9/input");
+const input = readInput("./src/level9/exampleinput");
+
+assignAdjacentPoints(input);
+console.log(`Part 1 solution: ${findLowRiskPoints(input).reduce((prev, curr) => prev += curr.value + 1, 0)}`);
+
 let group = 0;
 
-const getNeighborsGroup = (basin: RiskPoint) => {
-  const { position, value } = basin;
+const getNeighborGroup = (point: RiskPoint) => {
+  if (point.value === 9) return 0;
 
-  const { x, y } = position;
-  const topPos = y + 1;
-  const bottomPos = y - 1;
-  const leftPos = x - 1;
-  const rightPos = x + 1;
+  if (!point.pointAdjacent) return 0;
+  const { top, bottom, left, right } = point.pointAdjacent;
 
-  const top = getNeighborGroup({ x, y: bottomPos });
-  const bottom = getNeighborGroup({ x, y: topPos });
-  const right = getNeighborGroup({ x: rightPos, y });
-  const left = getNeighborGroup({ x: leftPos, y });
-
-  const rightCorner = getNeighborGroup({ x: rightPos, y: bottomPos });
-
-  if (top && top != 0) return top;
-  if (bottom && bottom != 0) return bottom;
-  if (left && left != 0) return left;
-  if (right && right != 0) return right;
-
-  if (rightCorner && rightCorner != 0) {
-    const cornerValue = getPoint({ x: rightPos, y: bottomPos }, rawPoints);
-    if (value <= cornerValue) {
-      return rightCorner;
-    }
-  };
+  if (top && top.group != 0) {
+    return top.group;
+  }
+  if (left && left.group != 0) {
+    return left.group;
+  }
+  if (right && right.group != 0) {
+    return right.group;
+  }
+  if (bottom && bottom.group != 0) {
+    return bottom.group;
+  }
 
   group += 1;
   return group;
 };
 
-for (let basin of basins) {
-  const { position } = basin;
-  groupMap[position.y][position.x] = getNeighborsGroup(basin);
+const assignGroups = (input: RiskPoint[]) => {
+  for (let point of input) {
+    point.group = getNeighborGroup(point);
+  }
 };
 
-console.log(groupMap);
-
-
-const groupCount: number[] = Array(9).fill(0);
-
-console.log(groupMap.flatMap(g => g));
-
-
-for (let group of groupMap.flatMap(g => g)) {
-  if (group === 0) continue;
-  groupCount[group]++
+for (let i = 0; i <= 100; i++) {
+  assignAdjacentPoints(input);
+  assignGroups(input);
 }
 
-const sortedGroupCount = groupCount.sort((a, b) => b - a).slice(0, 3);
-const [a, b, c] = sortedGroupCount;
+let groupCount: number[] = [];
+input.map(i => i.group).forEach(n => {
+  if (n === undefined || n === 0) return;
+  if (groupCount[n] === undefined) {
+    groupCount[n] = 0;
+  }
+  groupCount[n] += 1;
+});
+const [a, b, c] = groupCount.filter(c => c != NaN).sort((a, b) => b - a).slice(0, 3);
 console.log(a * b * c);
-
-
-// console.log(groupMap);
