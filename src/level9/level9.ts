@@ -103,46 +103,31 @@ const assignAdjacentPoints = (points: RiskPoint[]) => {
   }
 };
 
-// const input = readInput("./src/level9/input");
-const input = readInput("./src/level9/exampleinput");
+const input = readInput("./src/level9/input");
+// const input = readInput("./src/level9/exampleinput");
 
 assignAdjacentPoints(input);
 console.log(`Part 1 solution: ${findLowRiskPoints(input).reduce((prev, curr) => prev += curr.value + 1, 0)}`);
 
-let group = 0;
+let group = 1;
 
-const getNeighborGroup = (point: RiskPoint) => {
-  if (point.value === 9) return 0;
+const followDownhill = (point: RiskPoint, group: number) => {
+  if (point.value === 9 || point.value === 10 || point.group !== 0) return;
 
-  if (!point.pointAdjacent) return 0;
-  const { top, bottom, left, right } = point.pointAdjacent;
+  point.group = group;
 
-  if (top && top.group != 0) {
-    return top.group;
+  if (point.pointAdjacent) {
+    followDownhill(point.pointAdjacent.top, group);
+    followDownhill(point.pointAdjacent.bottom, group);
+    followDownhill(point.pointAdjacent.left, group);
+    followDownhill(point.pointAdjacent.right, group);
   }
-  if (left && left.group != 0) {
-    return left.group;
-  }
-  if (right && right.group != 0) {
-    return right.group;
-  }
-  if (bottom && bottom.group != 0) {
-    return bottom.group;
-  }
+};
 
+assignAdjacentPoints(input);
+for (let point of input) {
+  followDownhill(point, group);
   group += 1;
-  return group;
-};
-
-const assignGroups = (input: RiskPoint[]) => {
-  for (let point of input) {
-    point.group = getNeighborGroup(point);
-  }
-};
-
-for (let i = 0; i <= 100; i++) {
-  assignAdjacentPoints(input);
-  assignGroups(input);
 }
 
 let groupCount: number[] = [];
