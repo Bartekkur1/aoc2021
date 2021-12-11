@@ -15,6 +15,7 @@
     "level8": "ts-node ./src/level8/level8.ts",
     "level9": "ts-node ./src/level9/level9.ts",
     "level10": "ts-node ./src/level10/level10.ts",
+    "level11": "ts-node ./src/level11/level11.ts",
     "ts-init": "ts-jest config:init",
     "build": "tsc",
     "tsc-init": "tsc --init"
